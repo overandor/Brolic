@@ -6,23 +6,23 @@ import { Copy, Check } from "lucide-react";
 const codeExamples = [
   {
     label: "Install",
-    code: `npm install @optimus/sdk
+    code: `npm install @brolic/sdk
 
 # or
-yarn add @optimus/sdk
-pnpm add @optimus/sdk`,
+yarn add @brolic/sdk
+pnpm add @brolic/sdk`,
   },
   {
     label: "Initialize",
-    code: `import { Optimus } from '@optimus/sdk'
+    code: `import { Brolic } from '@brolic/sdk'
 
-const optimus = new Optimus({
-  apiKey: process.env.OPTIMUS_KEY
+const brolic = new Brolic({
+  apiKey: process.env.BROLIC_KEY
 })`,
   },
   {
     label: "Deploy",
-    code: `const app = await optimus.deploy({
+    code: `const app = await brolic.deploy({
   name: 'my-app',
   region: 'auto',
   scaling: {

@@ -7,9 +7,9 @@ const steps = [
     number: "I",
     title: "Connect your tools",
     description: "Integrate with your existing stack in minutes. We support 200+ data sources out of the box.",
-    code: `import { optimus } from '@optimus/core'
+    code: `import { brolic } from '@brolic/core'
 
-optimus.connect({
+brolic.connect({
   source: 'your-database',
   sync: true
 })`,
@@ -18,7 +18,7 @@ optimus.connect({
     number: "II",
     title: "Build your workflow",
     description: "Design powerful automations with our visual builder or write code directly.",
-    code: `optimus.workflow('process', {
+    code: `brolic.workflow('process', {
   trigger: 'event',
   actions: [
     'validate',
@@ -31,7 +31,7 @@ optimus.connect({
     number: "III",
     title: "Ship to production",
     description: "Deploy globally with zero configuration. Your app goes live in under 30 seconds.",
-    code: `optimus.deploy({
+    code: `brolic.deploy({
   target: 'production',
   regions: 'auto'
 })

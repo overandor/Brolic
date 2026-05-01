@@ -58,7 +58,7 @@ export function CtaSection() {
                 </h2>
 
                 <p className="text-xl text-muted-foreground mb-12 leading-relaxed max-w-xl">
-                  Join thousands of teams shipping faster with Optimus. 
+                  Join thousands of teams shipping faster with Brolic. 
                   Start free, scale infinitely.
                 </p>
 
