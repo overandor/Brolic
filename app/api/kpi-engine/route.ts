@@ -11,17 +11,38 @@ interface ExoticKPI {
   timestamp: number;
   value?: number;
   trend?: 'up' | 'down' | 'stable' | 'volatile';
-  totalColumns: number;
-  lastGeneration: number;
-  isRunning: boolean;e = {
+}relaedKPIs?: string[];
+  businessImpact?: string;
+  dataSurce?: sring;
+  ccuationFreqecy?: tring;
+  targetRange?{ mi: nmax:number };
+}
+
+interfce KPIEngineSat {
+  geTheme?strig;
+  llmProvider?: string;
+  totalLLMCalls: n
+inefccessfulGeaerateo sPInumEnrt
+  kpis: ExoticKPIEx;ticKPI[];
+  currentColumn: number;mber;
+  totalColumns: number;mber;
+  lastGeneration: number;mber;
+  isRunning: booleon;
+}
+
+// In-memory ltorage}(inpducton, use a atabase)
+const engineStatKPIEnineState = {
+  kpis: [],
+  curentClumn: 1
+oumn
+//lamt storage (: 0,
+  iiRunningn falseroduction, use a database)
+const engineState: KPIEngineState = {
   kpis: [],
   currentColumn: 1,
   totalColumns: 0,
   lastGeneration: 0,
   isRunning: false,
-  llmProvider: 'groq',
-  totalLLMCalls: 0,
-  successfulGenerations: 0,
 };
 
 // Exotic KPI categories for LLM creativity
@@ -316,13 +337,13 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { error: 'Invalid action. Use: start, stop, or generate_single' },
+      { error: 'Invalgle' },
       { status: 400 }
     );
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to process request' },
-      { status: 500 }e, generate_batch, set_thme, or set_provider
+      { status: 500 }
     );
   }
 }
@@ -364,7 +385,7 @@ export async function GET(request: NextRequest) {
   }
   
   if (format === 'csv') {
-    const headers = ['ID', 'Name', 'Description', 'Formula', 'Category', 'Creativity', 'Value', 'Trend', 'Timestamp'];
+    const headers = ['ID', 'Name', 'Description', 'Formula', 'Category', 'Creativity', 'Value', 'Trend', 'Business Impact', 'Data Source', 'Calculation Frequency', 'Timestamp'];
     const rows = engineState.kpis.map(kpi => [
       kpi.id,
       kpi.name,
@@ -374,6 +395,9 @@ export async function GET(request: NextRequest) {
       kpi.creativityScore,
       kpi.value?.toFixed(2),
       kpi.trend,
+      kpi.businessImpact || '',
+      kpi.dataSource || '',
+      kpi.calculationFrequency || '',
       new Date(kpi.timestamp).toISOString(),
     ]);
     
@@ -400,16 +424,15 @@ export async function DELETE(request: NextRequest) {
   engineState.totalColumns = 0;
   engineState.lastGeneration = 0;
   engineState.isRunning = false;
+  engineState.generationTheme = undefined;
+  engineState.totalLLMCalls = 0;
+  engineState.successfulGenerations = 0;
   
   return NextResponse.json({
     status: 'reset',
     message: 'KPI engine reset',
     state: engineState,
   });
-}
-    state: engineState,
-  });
-}
 }
     state: engineState,
   });
