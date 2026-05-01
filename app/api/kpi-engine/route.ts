@@ -337,7 +337,7 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { error: 'Invalgle' },
+      { error: 'Invalid action. Use: start, stop, generate_single, generate_batch, set_theme, or set_provider' },
       { status: 400 }
     );
   } catch (error) {
