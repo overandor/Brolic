@@ -11,23 +11,17 @@ interface ExoticKPI {
   timestamp: number;
   value?: number;
   trend?: 'up' | 'down' | 'stable' | 'volatile';
-}
-
-interface KPIEngineState {
-  kpis: ExoticKPI[];
-  currentColumn: number;
   totalColumns: number;
   lastGeneration: number;
-  isRunning: boolean;
-}
-
-// In-memory storage (in production, use a database)
-const engineState: KPIEngineState = {
+  isRunning: boolean;e = {
   kpis: [],
   currentColumn: 1,
   totalColumns: 0,
   lastGeneration: 0,
   isRunning: false,
+  llmProvider: 'groq',
+  totalLLMCalls: 0,
+  successfulGenerations: 0,
 };
 
 // Exotic KPI categories for LLM creativity
@@ -205,9 +199,9 @@ function startKPIEngine() {
         engineState.totalColumns++;
         engineState.lastGeneration = Date.now();
         
-        // Keep only last 100 KPIs to manage memory
-        if (engineState.kpis.length > 100) {
-          engineState.kpis = engineState.kpis.slice(-100);
+        // Keep only last 150 KPIs to manage memory
+        if (engineState.kpis.length > 150) {
+          engineState.kpis = engineState.kpis.slice(-150);
         }
         
         console.log(`Generated new KPI: ${newKPI.name} (Creativity: ${newKPI.creativityScore})`);
@@ -328,7 +322,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to process request' },
-      { status: 500 }
+      { status: 500 }e, generate_batch, set_thme, or set_provider
     );
   }
 }
@@ -412,6 +406,10 @@ export async function DELETE(request: NextRequest) {
     message: 'KPI engine reset',
     state: engineState,
   });
+}
+    state: engineState,
+  });
+}
 }
     state: engineState,
   });
