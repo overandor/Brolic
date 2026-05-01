@@ -130,9 +130,9 @@ function startKPIEngine() {
         engineState.totalColumns++;
         engineState.lastGeneration = Date.now();
         
-        // Keep only last 50 KPIs to manage memory
-        if (engineState.kpis.length > 50) {
-          engineState.kpis = engineState.kpis.slice(-50);
+        // Keep only last 100 KPIs to manage memory
+        if (engineState.kpis.length > 100) {
+          engineState.kpis = engineState.kpis.slice(-100);
         }
         
         console.log(`Generated new KPI: ${newKPI.name} (Creativity: ${newKPI.creativityScore})`);
