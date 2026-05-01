@@ -52,47 +52,113 @@ const KPICategories = [
   'value-creation-efficiency-ratio',
   'cross-functional-collaboration-depth',
   'strategic-option-value-realization',
+  'customer-lifetime-value-velocity',
+  'feature-usage-correlation-matrix',
+  'team-cognitive-diversity-index',
+  'innovation-adoption-curve-analysis',
+  'market-share-elasticity-coefficient',
+  'operational-efficiency-decomposition',
+  'user-retention-prediction-score',
+  'revenue-attribution-uncertainty',
+  'cross-sell-propensity-dynamics',
 ];
 
-// Generate exotic KPI using LLM creativity
-async function generateExoticKPI(existingKPIs: ExoticKPI[]): Promise<ExoticKPI> {
-  const groqApiKey = process.env.GROQ_API_KEY;
+// LLM Providers for KPI generation
+const LLMProviders = {
+  groq: {
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    model: 'llama3-70b-8192',
+    getAuth: () => `Bearer ${process.env.GROQ_API_KEY}`,
+  },
+  openrouter: {
+    url: 'https://openrouter.ai/api/v1/chat/completions',
+    model: 'anthropic/claude-3-haiku',
+    getAuth: () => `Bearer ${process.env.OPENROUTER_API_KEY}`,
+  },
+};
+
+// Generate exotic KPI using LLM creativity with chain-of-thought
+async function generateExoticKPI(existingKPIs: ExoticKPI[], theme?: string): Promise<ExoticKPI> {
+  const provider = LLMProviders[engineState.llmProvider || 'groq'];
+  const apiKey = provider.getAuth();
+  
+  engineState.totalLLMCalls++;
   
   // Get existing KPI names to avoid duplicates
   const existingNames = existingKPIs.map(kpi => kpi.name).join(', ');
+  const existingCategories = [...new Set(existingKPIs.map(kpi => kpi.category))];
   
-  // Select a random category
-  const category = KPICategories[Math.floor(Math.random() * KPICategories.length)];
+  // Select a random category, considering theme if provided
+  let category = KPICategories[Math.floor(Math.random() * KPICategories.length)];
+  if (theme) {
+    const themedCategories = KPICategories.filter(cat => cat.includes(theme.toLowerCase()));
+    if (themedCategories.length > 0) {
+      category = themedCategories[Math.floor(Math.random() * themedCategories.length)];
+    }
+  }
   
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  // Build chain-of-thought prompt for better reasoning
+  const systemPrompt = `You are an expert KPI architect with deep knowledge of business intelligence, data science, and organizational psychology. Your task is to generate exotic, novel KPIs that provide genuine business insights.
+
+Think step-by-step:
+1. Analyze the category and business context
+2. Consider what metrics are typically overlooked
+3. Design a metric that reveals hidden patterns
+4. Ensure it's actionable and measurable
+5. Rate creativity based on novelty and practical value
+
+Return ONLY valid JSON with this exact format:
+{
+  "name": "unique KPI name (3-6 words)",
+  "description": "comprehensive explanation (100-200 words: what it measures, why it matters, what questions it answers)",
+  "formula": "detailed calculation methodology with data sources",
+  "businessImpact": "specific business value and decision-making impact",
+  "dataSource": "primary data source for calculation",
+  "calculationFrequency": "recommended calculation frequency",
+  "targetRange": {"min": number, "max": number},
+  "creativityScore": number (50-100 based on novelty and practicality)
+}
+
+Avoid these existing KPIs: ${existingNames}
+Existing categories used: ${existingCategories.join(', ')}`;
+
+  const response = await fetch(provider.url, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${groqApiKey}`,
+      'Authorization': apiKey,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama3-70b-8192',
+      model: provider.model,
       messages: [
         {
           role: 'system',
-          content: `You are a creative KPI engineer. Generate exotic, novel, and insightful KPIs that most companies never track. Be creative but practical. Return only JSON with format: {"name": "unique KPI name", "description": "what it measures and why it matters", "formula": "how to calculate it", "creativityScore": number (0-100)}. Avoid these existing KPIs: ${existingNames}`
+          content: systemPrompt,
         },
         {
           role: 'user',
-          content: `Generate a new exotic KPI in the category: ${category}. Make it creative, insightful, and something that could provide genuine business value.`
+          content: `Generate a new exotic KPI in the category: ${category}${theme ? ` with theme: ${theme}` : ''}. Think deeply about what business leaders wish they could measure but don't know how to. Create something that would make executives say "I never thought to track that, but it's brilliant."`,
         }
       ],
-      temperature: 0.9,
-      max_tokens: 300,
+      temperature: 0.95,
+      max_tokens: 800,
     }),
   });
 
   if (!response.ok) {
-    throw new Error('LLM generation failed');
+    throw new Error(`LLM generation failed: ${response.statusText}`);
   }
 
   const data = await response.json();
   const result = JSON.parse(data.choices[0].message.content);
+  
+  engineState.successfulGenerations++;
+
+  // Find related KPIs based on category similarity
+  const relatedKPIs = existingKPIs
+    .filter(kpi => kpi.category === category || kpi.category.split('-').some(part => category.includes(part)))
+    .slice(0, 3)
+    .map(kpi => kpi.id);
 
   return {
     id: `kpi-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -102,8 +168,13 @@ async function generateExoticKPI(existingKPIs: ExoticKPI[]): Promise<ExoticKPI> 
     category,
     creativityScore: result.creativityScore || Math.floor(Math.random() * 30) + 70,
     timestamp: Date.now(),
-    value: Math.random() * 100, // Simulated initial value
+    value: Math.random() * 100,
     trend: ['up', 'down', 'stable', 'volatile'][Math.floor(Math.random() * 4)] as any,
+    relatedKPIs: relatedKPIs.length > 0 ? relatedKPIs : undefined,
+    businessImpact: result.businessImpact,
+    dataSource: result.dataSource,
+    calculationFrequency: result.calculationFrequency,
+    targetRange: result.targetRange,
   };
 }
 
@@ -182,7 +253,8 @@ export async function POST(request: NextRequest) {
     }
     
     if (action === 'generate_single') {
-      const newKPI = await generateExoticKPI(engineState.kpis);
+      const { theme } = body;
+      const newKPI = await generateExoticKPI(engineState.kpis, theme);
       newKPI.value = calculateKPIValue(newKPI);
       engineState.kpis.push(newKPI);
       engineState.totalColumns++;
@@ -193,6 +265,60 @@ export async function POST(request: NextRequest) {
         kpi: newKPI,
         state: engineState,
       });
+    }
+    
+    if (action === 'generate_batch') {
+      const { count = 5, theme } = body;
+      const newKPIs = [];
+      
+      for (let i = 0; i < count; i++) {
+        try {
+          const newKPI = await generateExoticKPI(engineState.kpis, theme);
+          newKPI.value = calculateKPIValue(newKPI);
+          engineState.kpis.push(newKPI);
+          newKPIs.push(newKPI);
+          engineState.totalColumns++;
+          engineState.lastGeneration = Date.now();
+          
+          // Small delay between generations
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          console.error(`Batch generation error at ${i}:`, error);
+        }
+      }
+      
+      return NextResponse.json({
+        status: 'batch_generated',
+        count: newKPIs.length,
+        kpis: newKPIs,
+        state: engineState,
+      });
+    }
+    
+    if (action === 'set_theme') {
+      const { theme } = body;
+      engineState.generationTheme = theme;
+      return NextResponse.json({
+        status: 'theme_set',
+        theme: engineState.generationTheme,
+        state: engineState,
+      });
+    }
+    
+    if (action === 'set_provider') {
+      const { provider } = body;
+      if (LLLMProviders[provider]) {
+        engineState.llmProvider = provider;
+        return NextResponse.json({
+          status: 'provider_set',
+          provider: engineState.llmProvider,
+          state: engineState,
+        });
+      }
+      return NextResponse.json(
+        { error: `Invalid provider. Available: ${Object.keys(LLMProviders).join(', ')}` },
+        { status: 400 }
+      );
     }
     
     return NextResponse.json(
@@ -230,6 +356,15 @@ export async function GET(request: NextRequest) {
           ? engineState.kpis.reduce((sum, kpi) => sum + kpi.creativityScore, 0) / engineState.kpis.length 
           : 0,
         categories: [...new Set(engineState.kpis.map(kpi => kpi.category))],
+        llmStats: {
+          totalCalls: engineState.totalLLMCalls,
+          successfulCalls: engineState.successfulGenerations,
+          successRate: engineState.totalLLMCalls > 0 
+            ? (engineState.successfulGenerations / engineState.totalLLMCalls * 100).toFixed(2) + '%'
+            : '0%',
+          currentProvider: engineState.llmProvider,
+          currentTheme: engineState.generationTheme,
+        },
       },
     });
   }
@@ -275,6 +410,9 @@ export async function DELETE(request: NextRequest) {
   return NextResponse.json({
     status: 'reset',
     message: 'KPI engine reset',
+    state: engineState,
+  });
+}
     state: engineState,
   });
 }
